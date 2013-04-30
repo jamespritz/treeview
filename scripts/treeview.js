@@ -1,6 +1,8 @@
 ﻿
 (function ($) {
 
+    var $listview;
+
     var methods = {
         init: _initPlugin
         , getData: _exportData
@@ -36,52 +38,18 @@
         return this.each(function () {
 
             //expected to be UL
-            var $this = $(this);
+            $listview = $(this);
 
-            var $ul = $this;
-            var id = $ul.attr('id');
+   
+            var id = $listview.attr('id');
 
-            $wrap = $this.wrap('<div class="treeview-wrapper" onselectstart="return false">').parent();
-            $wrap.css('width', $this.css('width')).css('height', $this.css('height'));
+            $wrap = $listview.wrap('<div class="treeview-wrapper" onselectstart="return false">').parent();
+            $wrap.css('width', $listview.css('width')).css('height', $listview.css('height'));
 
-            _goGetMoreNodes($ul, null);
-
-            //does it have content?... if so, initialize
-            //if ($this.ch().length > 0) { _init($this, false); }
-
-            /*if ((settings.dataSource) && (typeof (settings.dataSource) == 'function'))
-            {
-                $wrap.empty();
-                $ul = _createUL(settings.dataSource(null, false));
-                //$ul = _createUL(_dummy(null, false));
-                $ul.attr('id', id);
-                $wrap.append($ul);
-
-            }*/
-
-            //_init($ul, false);
-
-
-
+            _goGetMoreNodes($listview, null);
 
         });
 
-        function _initChecked($item) {
-
-            var hasChildNodes = $item.find('>ul').length;
-
-            if ((!hasChildNodes) || ((!hasChildNodes) && ($item.attr('data-haschildren') == '1'))) {
-
-
-               // _selectNode($item, $item.attr('data-status'), 0);
-
-            } else {
-                $item.find('>ul>li').each(function () {
-                    _initChecked($(this));
-                });
-            }
-
-        }
 
         function _createUL(nodes) {
 
@@ -243,9 +211,10 @@
 
 
                     $item.on('click', '>.content, >.icon_tv_check', function () {
-                        var currentStatus = $(this).parent().attr('data-status');
+                        var $node = $(this).parent();
+                        var currentStatus = $node.attr('data-status');
                         if (!currentStatus) { currentStatus = 'unchecked'; }
-
+                        
 
                         switch (currentStatus) {
                             case 'unchecked':
@@ -253,24 +222,26 @@
                                     -select + all descendents
                                     -eval ancestors
                                 */
-                                _selectNode($(this).parent(), 'checked', 0);
+                                _selectNode($node, 'checked', 0);
                                 break;
                             case 'checked':
                                 /*  -unselect + all descendents
                                     -eval ancestors
                                 */
-                                _selectNode($(this).parent(), 'unchecked', 0);
+                                _selectNode($node, 'unchecked', 0);
                                 break;
                             case 'mixed':
                                 /*
                                     -same as 1
                                 */
 
-                                _selectNode($(this).parent(), 'unchecked', 0);
+                                _selectNode($node, 'unchecked', 0);
                                 break;
 
                             default: alert('uh oh');
                         }
+
+                        $listview.trigger('onchange', [_exportData($node, false)[0], _hasChanged()]);
 
                     });
                 }
@@ -298,23 +269,18 @@
 
                 _init($newNode, (parent != null));
 
-                if (parent != null) {
-                    //if parent's selection has changed prior to expansion, than we need to update th children
-                    if (($node.attr('data-status') == 'checked') || ($node.attr('data-status') == 'unchecked')) {
-                        var newState = $node.attr('data-status');
-                        $newNode.find('>li').each(function () {
-                            if ($(this).attr('data-enabled') == 'true') {
-                                $(this).attr('data-status', newState).removeClass('tv-checked tv-unchecked tv-mixed').addClass('tv-' + newState);
-                            }
-                        });
-                    }
-                    $newNode.removeClass('collapsed');
-                } else {
-                    //resolve  checked
+    
+                //if parent's selection has changed prior to expansion, than we need to update th children
+                if (($node.attr('data-status') == 'checked') || ($node.attr('data-status') == 'unchecked')) {
+                    var newState = $node.attr('data-status');
                     $newNode.find('>li').each(function () {
-                        _initChecked($(this));
+                        if ($(this).attr('data-enabled') == 'true') {
+                            $(this).attr('data-status', newState).removeClass('tv-checked tv-unchecked tv-mixed').addClass('tv-' + newState);
+                        }
                     });
                 }
+                $newNode.removeClass('collapsed');
+
             }
 
             if ((result.fail) && (typeof (result.fail) == 'function')) {
@@ -458,8 +424,9 @@
     };
 
     function _hasChanged() {
-        var $this = $(this);
-        return $this.find('li').filter(function (index) { return $(this).attr('data-status') != $(this).attr('data-ostatus'); }).length > 0;
+        if (!$listview) { $listview = $(this); }
+
+        return $listview.find('li').filter(function (index) { return $(this).attr('data-status') != $(this).attr('data-ostatus'); }).length > 0;
     }
 
 })(jQuery);

@@ -135,7 +135,7 @@
 
                 
                 asyncTest("Testing Load", 1, function () {
-                    $('#test').JPTreeView({ dataSource: gogetit, viewRestricted: true });
+                    $('#test').JPTreeView({ dataSource: gogetit, viewRestricted: true }).on('onchange', function (e, p, c) { alert(c); });
                     ok(true, "async load");
                 });
 
