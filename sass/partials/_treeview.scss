@@ -1,0 +1,117 @@
+﻿.treeview-wrapper {
+
+    display: block;
+    border: solid 1px $border-color;
+    border-radius: 5px;
+    overflow: auto;
+}
+
+.treeview-node {
+
+    display: block;
+	margin-left: 0px;
+	width: 95%;
+	
+    list-style: none;
+    padding-left: 5px;
+    padding-right: 5px;
+    cursor: pointer;
+
+
+}
+
+.treeview-node li { 
+
+    display: block;
+    float: left;
+    white-space: nowrap;
+    width: 100%;
+}
+
+.innerNode { margin-left: 12px; }
+
+.content {
+    position: relative;
+    display: inline-block;
+    padding-left: 5px;
+    padding-right: 10px;
+    line-height: 1.5em;
+    height: 1.5em;
+    
+
+}
+
+.collapsed { display: none; }
+
+/* Icons */
+.icon_tv {
+    position: relative;
+    width: 13px;
+    height: 13px;
+    top: 2px;
+    display: inline-block;
+
+}
+
+
+
+/* Chevron (expand/collapse) */
+.icon_tv_chevron {
+	/* placeholder in case need to change background image */
+    background-image: image-url("glyphicons-halflings.png");
+	margin-right: 5px;
+
+}
+//has children, but not expanded (right)
+.treeview-node .tv-collapsed > .icon_tv_chevron {
+	background-position: -456px -72px;
+}
+//has children, expanded (down)
+.treeview-node .tv-expanded > .icon_tv_chevron {
+	background-position: -313px -119px;
+}
+//no children
+.treeview-node .tv-empty > .icon_tv_chevron {
+	visibility: hidden;
+}
+
+
+
+/* checks (checked/unchecked/mixed) */
+.icon_tv_check {
+	/* placeholder in case need to change background image */
+}
+//checked
+.treeview-node .tv-checked > .icon_tv_check {
+	background-image: image-url("check-black.gif");
+}
+//unchecked
+.treeview-node .tv-checked > .content {
+    font-weight: bold;
+}
+
+.treeview-node .tv-disabled > .icon_tv_check {
+    width: 14px;
+    height: 14px;
+	top: 2;
+	background-image: image-url("glyphicons-halflings.png");
+  background-position: -216px -96px;
+}
+.treeview-node .tv-unchecked > .icon_tv_check {
+	background-image: image-url("check-empty.gif");
+}
+.treeview-node .tv-mixed > .icon_tv_check {
+	background-image: image-url("check-mixed.gif");
+}
+.treeview-node .tv-mixed > .content {
+	font-style: italic;
+}
+
+
+.temp-node { 
+	border-radius : 5px;
+	padding : 3px;
+	background-color: gray;
+	color: white;
+	display: inline-block;
+	}

@@ -1,0 +1,42 @@
+﻿@charset "UTF-8";
+
+$font-size : 8pt;
+
+$font-verdana : Verdana, "Lucida Grande", FreeSans, sans-serif;
+$font-arial   : Helvetica, Arial, FreeSans, sans-serif;
+$font-tahoma  : Tahoma, $font-arial;
+$font-segoe   : "Segoe UI", Tahoma, Verdana, Arial;
+$font: $font-arial;
+$default-border-radius: 5px;
+$gs-column-width: 50px;
+$gs-gutter-width: 5px;
+
+$padding : 10px;
+$margin  : 10px;
+
+
+$radius: 5px;
+
+@import "partials/colors";
+@import "compass/css3/border-radius";
+
+
+
+
+
+
+
+/* The Magnificent Clearfix: Updated to prevent margin-collapsing on child elements in most situations.
+   nicolasgallagher.com/micro-clearfix-hack/ */
+.clearfix { clear: both; }
+
+/*
+a:hover { color: $color-highlight; text-decoration: underline; }
+a { color: $color-link; text-decoration: none;}
+a:visited { color: $color-link; text-decoration: none;}
+*/
+
+
+
+
+
