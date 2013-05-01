@@ -17,7 +17,7 @@
 <body>
 
 <div id="qunit"></div>
-<div id="qunit-fixture">
+<!--<div id="qunit-fixture">-->
 
     <div class="container">
         <div class="row">
@@ -29,7 +29,7 @@
 
             </div>
 
-            <a href="#" id="changed">Have I Changed?</a>
+            <a href="#" id="btnTest">test</a>
 
 
         </div>
@@ -45,6 +45,8 @@
     <script type="text/javascript">
 
         (function ($) {
+
+            var inAsyncTest = false;
 
             //mock promise
             var b = { done: finished };
@@ -97,7 +99,7 @@
                                 }
                                 ]
                             }
-                            , { id: 13, n: 'Client 13', s: 0, c: false, ch: null }
+                            , { id: 13, n: 'Client 13', s: 0, x: 'abc', c: false, ch: null }
                             , { id: 14, n: 'Client 14', s: 0, c: false, p: true, ch: null }
                         ];
                     }  else if (parentId == 11) {
@@ -117,7 +119,9 @@
                 }, 3000);
 
                 //return mock promise
-                b.done(function () { start(); });
+                if (inAsyncTest) {
+                    b.done(function () { start(); inAsyncTest = false; });
+                }
                 return b;
 
             }
@@ -125,22 +129,39 @@
             $(document).ready(function () {
 
 
-               
-                
-                
-
-                
-
-                $('#changed').click(function () { alert($('#test').JPTreeView('hasChanged')); });
-
                 
                 asyncTest("Testing Load", 1, function () {
-                    $('#test').JPTreeView({ dataSource: gogetit, viewRestricted: true }).on('onchange', function (e, p, c) { alert(c); });
+                   
+                    inAsyncTest = true;
+                    $('#test').JPTreeView({ dataSource: gogetit, viewRestricted: true }).on('onchange', function (e, p, c) { alert(p.id); });
                     ok(true, "async load");
                 });
 
-                test("testing", function () { ok(true, "true"); });
-                test("another", function () { ok(true, "yay"); });
+                test("select node ", function () {
+                    $('#test').JPTreeView('select', 13, 'abc');
+                    //var selected = $('#test').JPTreeView('isSelected', 13, 'abc');
+                    var selected = $('#test')[0].isSelected(13, 'abc');
+                    ok(selected, "13/abc is selected");
+                });
+
+                
+                asyncTest("revert", 1, function () {
+                
+                    inAsyncTest = true;
+                    $('#test').JPTreeView('revert');
+
+                    equal(false, $('#test')[0].hasChanged(), "Reverted to No Changes");
+
+                });
+
+                test("commit", function () {
+                    expect(2);
+                    $('#test').JPTreeView('select', 14, '');
+                    equal(true, $('#test')[0].hasChanged(), "Has Changed (14)");
+                    $('#test').JPTreeView('commit');
+                    equal(false, $('#test')[0].hasChanged(), "Committed, now No Changes");
+
+                });
             });
 
 
