@@ -115,7 +115,7 @@
                     }
 
 
-                    b.done(data, null, null);
+                    b.done({ items: data }, null, null);
                 }, 3000);
 
                 //return mock promise
@@ -133,7 +133,7 @@
                 asyncTest("Testing Load", 1, function () {
                    
                     inAsyncTest = true;
-                    $('#test').JPTreeView({ dataSource: gogetit, viewRestricted: true }).on('onchange', function (e, p, c) { alert(p.id); });
+                    $('#test').JPTreeView({ dataSource: gogetit, viewRestricted: true });//.on('onchange', function (e, p, c) { alert(p.id); });
                     ok(true, "async load");
                 });
 

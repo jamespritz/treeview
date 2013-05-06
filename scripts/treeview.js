@@ -67,12 +67,10 @@
 
     };
 
-    function _createUL(nodes) {
+        function _createUL($ul, nodes) {
 
-        var $ul, $li;
-
-        $ul = $('<ul class="treeview-node"></ul>');
-
+            var $li;
+            $ul.empty();
         $(nodes).each(function () {
             var disabled = !((this.p == undefined) || (this.p));
 
@@ -91,14 +89,13 @@
 
             //if deep, traverse through children.
             if (this.ch && (this.ch.length > 0)) {
-                $li.append(_createUL(this.ch));
+                var $cul = $('<ul class="treeview-node innerNode"></ul>');
+                _createUL($cul, this.ch)
+                $li.append($cul);
             }
 
             $ul.append($li);
         });
-
-
-        return $ul;
 
     }
 
@@ -111,34 +108,40 @@
         if (parentNode) { parentId = parentNode.id; }
 
         if (parentId == null) {
-            return [
-                { id: 1, n: 'Client 1', s: 1, p: false, c: false, ch: null }
-                , { id: 2, n: 'Client 2', s: 0, c: false, ch: null }
-                , { id: 3, n: 'this is shorter name', s: 0, c: false, ch: null }
-                , {
-                    id: 4, n: 'Client 4', s: 0, cr: true, c: true, ch: [
-                    { id: 10, n: 'Client 5', s: 0, c: false, ch: null }
+            return {
+                items: [
+                    { id: 1, n: 'Client 1', s: 1, p: false, c: false, ch: null }
+                    , { id: 2, n: 'Client 2', s: 0, c: false, ch: null }
+                    , { id: 3, n: 'this is shorter name', s: 0, c: false, ch: null }
                     , {
-                        id: 11, n: 'Client 6', s: 0, cr: true, c: true, ch: [
-                        { id: 10, n: 'Client 7', s: 0, c: false, ch: null }
-                        , { id: 11, n: 'Client 8', s: 0, cr: true, c: true, ch: null }
+                        id: 4, n: 'Client 4', s: 0, cr: true, c: true, ch: [
+                        { id: 10, n: 'Client 5', s: 0, c: false, ch: null }
+                        , {
+                            id: 11, n: 'Client 6', s: 0, cr: true, c: true, ch: [
+                            { id: 16, n: 'Client 7', s: 0, c: false, ch: null }
+                            , { id: 17, n: 'Client 8', s: 0, cr: true, c: true, ch: null }
+                            ]
+                        }
                         ]
                     }
-                    ]
-                }
-                , { id: 13, n: 'Client 13', s: 0, c: false, ch: null }
-                , { id: 14, n: 'Client 14', s: 0, c: false, p: false, ch: null }
-            ];
+                    , { id: 13, n: 'Client 13', s: 0, c: false, ch: null }
+                    , { id: 14, n: 'Client 14', s: 0, c: false, p: false, ch: null }
+                ]
+            };
         } else if (parentId == 11) {
-            return [
-                { id: 12, n: 'Client 9', s: 0, c: false, ch: null }
-                , { id: 13, n: 'Client 10 is a really long name to test horiz scrolling', s: 0, c: true, p: false, ch: null }
-            ];
+            return {
+                items: [
+                    { id: 12, n: 'Client 9', s: 0, c: false, ch: null }
+                    , { id: 13, n: 'Client 10 is a really long name to test horiz scrolling', s: 0, c: true, p: false, ch: null }
+                ]
+            };
         } else if (parentId == 13) {
-            return [
-                { id: 14, n: 'Client 15', s: 0, c: false, p: false, ch: null }
-                , { id: 15, n: 'Client 16', s: 0, c: false, p: false, ch: null }
-            ];
+            return {
+                items: [
+                    { id: 19, n: 'Client 15', s: 0, c: false, p: false, ch: null }
+                    , { id: 20, n: 'Client 16', s: 0, c: false, p: false, ch: null }
+                ]
+            };
         }
 
     }
@@ -197,7 +200,7 @@
                         if (!$subNode || ($subNode.length == 0)) {
                             if ($node.attr('data-haschildren') == '1') {
 
-                                _goGetMoreNodes($node, _exportData($node)[0]);
+                                _goGetMoreNodes($node, _exportNode($node));
 
                             }
 
@@ -273,31 +276,42 @@
     };
 
     function _goGetMoreNodes($node, parent) {
-        var $ul = $('<ul class="treeview-node innerNode"><li class="temp-node">' + settings.waitText + '</li></ul>');
-        $node.append($ul);
+            var $ul;
+            var $tmp = $('<li class="temp-node">' + settings.waitText + '</li>');
 
+            if ($node[0].tagName.toLowerCase() == 'ul') {
+
+                $ul = $node;
+                $ul.addClass('treeview-node').empty().append($tmp);
+             ;
+
+            } else {
+
+                $ul = $('<ul class="treeview-node innerNode"></ul>').append($tmp);
+                $node.append($ul);
+            }
 
 
         //need to get data from caller
         var result = settings.dataSource(parent);
 
         function _createDynNode(data, parent) {
-            var $newNode = _createUL(data);
-            $ul.replaceWith($newNode);
+                _createUL($ul, data.items);
 
-            _init($newNode, (parent != null));
+
+                _init($ul, (parent != null));
 
     
             //if parent's selection has changed prior to expansion, than we need to update th children
             if (($node.attr('data-status') == 'checked') || ($node.attr('data-status') == 'unchecked')) {
                 var newState = $node.attr('data-status');
-                $newNode.find('>li').each(function () {
+                        $ul.find('>li').each(function () {
                     if ($(this).attr('data-enabled') == 'true') {
                         $(this).attr('data-status', newState).removeClass('tv-checked tv-unchecked tv-mixed').addClass('tv-' + newState);
                     }
                 });
             }
-            $newNode.removeClass('collapsed');
+                    $ul.removeClass('collapsed');
 
         }
 
@@ -358,7 +372,7 @@
                 node.attr('data-status', myStatus).removeClass('tv-checked tv-unchecked tv-mixed').addClass('tv-' + myStatusDisplay);
                     
                 //only triggering on self.  Havn't decided if i need to trigger on all ancestors/descendents whose state changes as a result.
-                $listview.trigger('onchange', [_exportData(node, false)[0], _hasChanged()]);
+                $listview.trigger('onchange', [_exportNode(node), _hasChanged()]);
 
                 if (deep) {
                     node.find('> ul > li').each(function () { _selectNode($(this), status, -1); });
@@ -416,6 +430,17 @@
 
     }
 
+
+    function _exportNode($node) {
+        return {
+            id: $node.attr('data-id')
+                    , d: ($node.attr('data-status') == 'checked') ? 1 : -1
+                    , x: $node.attr('data-ext')
+        };
+        
+    }
+
+
     function _exportData($node, deep) {
 
 
@@ -427,16 +452,21 @@
         }
 
 
-        if ($node[0].tagName.toLowerCase() == 'li') {
-            nodes.push({
-                id: $this.attr('data-id')
-                , d: $this.attr('data-status') == 'checked'
-                , x: $this.attr('data-ext')
-                , c: (deep && ($this.find('> ul').length > 0)) ? _exportData($this.find('> ul'), deep) : null
-            });
+        if ($this[0].tagName.toLowerCase() == 'li') {
+
+            if ($this.attr('data-status') != 'unchecked') {
+              
+            return {
+                    id: $this.attr('data-id')
+                    , d: ($this.attr('data-status') == 'checked') ? 1 : -1
+                    , x: $this.attr('data-ext')
+                    , c: (deep && ($this.find('> ul').length > 0)) ? _exportData($this.find('> ul'), deep) : null
+            };
+            }
         } else {
 
-            $this.find('> li').each(function () {
+            //no need to traverse unchecked items.
+            $this.find('> li').filter(function(index) { return $(this).attr('data-status') != 'unchecked'; }).each(function () {
                 nodes.push(_exportData($(this), deep));
             });
         }
