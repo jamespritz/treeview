@@ -13,6 +13,8 @@
         , select: _select
         , deSelect: _deSelect
         , isSelected: _isSelected
+        , expand: _expand
+        , isExpanded: _isExpanded
     };
 
     $.fn.JPTreeView = function (method) {
@@ -52,8 +54,14 @@
    
             var id = $listview.attr('id');
 
+            if ($listview.parent().hasClass('treeview-wrapper')) {
+                $wrap = $listview.parent();
+            } else {
             $wrap = $listview.wrap('<div class="treeview-wrapper" onselectstart="return false">').parent();
             $wrap.css('width', $listview.css('width')).css('height', $listview.css('height'));
+            }
+
+
 
             _goGetMoreNodes($listview, null);
 
@@ -454,19 +462,20 @@
 
         if ($this[0].tagName.toLowerCase() == 'li') {
 
-            if ($this.attr('data-status') != 'unchecked') {
+
+            deep = (($this.attr('data-status') == 'mixed'));
               
             return {
                     id: $this.attr('data-id')
-                    , d: ($this.attr('data-status') == 'checked') ? 1 : -1
+                        , d: ($this.attr('data-status') == 'checked') ? 1 : ($this.attr('data-status') == 'unchecked') ? 0 : -1
                     , x: $this.attr('data-ext')
                     , c: (deep && ($this.find('> ul').length > 0)) ? _exportData($this.find('> ul'), deep) : null
             };
-            }
+      
         } else {
 
             //no need to traverse unchecked items.
-            $this.find('> li').filter(function(index) { return $(this).attr('data-status') != 'unchecked'; }).each(function () {
+            $this.find('> li').each(function () {
                 nodes.push(_exportData($(this), deep));
             });
         }
@@ -515,6 +524,32 @@
                 $this.attr('data-ostatus', $this.attr('data-status'));
             });
         });
+    }
+
+    function _expand(id, ext) {
+        return this.each(function () {
+            if (!$listview) { $listview = $(this); }
+            //$item.on('click', '>.icon_tv_chevron', function () {
+            var m1 = _match(id, ext);
+            if (m1) {
+                m1.find('>.icon_tv_chevron').trigger('click');
+            }
+        });
+    }
+
+    function _isExpanded(id, ext) {
+        if (!$listview) { $listview = $(this); }
+        var retVal = false;
+
+        var m1 = _match(id, ext);
+        if (m1 && (m1.length > 0)) {
+            var $ul = m1.find('>ul');
+            if ($ul && $ul.length > 0)
+            {
+                retVal = !($ul.css('display') == 'none');
+            }
+        }
+        return retVal;
     }
 
     function _select(id, ext)
@@ -566,6 +601,8 @@
             }
    
     }
+
+
 
     function _setStatus(id, ext, status)
     {

@@ -16,20 +16,23 @@
 
 <body>
 
-<div id="qunit"></div>
-<!--<div id="qunit-fixture">-->
+
 
     <div class="container">
         <div class="row">
+
+            
             <div class="span12">
 
-
+                <div id="qunit"></div>
+                <!--<div id="qunit-fixture">-->
+                <a href="#" id="run">Run Tests</a>
                 <ul id="test" style="width: 400px; height: 600px;"></ul>
 
 
             </div>
 
-            <a href="#" id="btnTest">test</a>
+
 
 
         </div>
@@ -45,6 +48,10 @@
     <script type="text/javascript">
 
         (function ($) {
+
+            QUnit.config.autostart = false;
+            $('#run').click(function () { QUnit.start(); $(this).hide(); });
+
 
             var inAsyncTest = false;
 
@@ -77,40 +84,33 @@
                     /*
                         id: unique id of node within scope of tree
                         n:  display name
+                        x:  extended data
                         s:  selected state : { -1:mixed, 0:not selected, 1:selected }
                         p:  selection permitted
                         c:  has children
-                        ch: child nodes array
                         cr: has children that are restricted (p = 0)
+                        ch: child nodes array
+                        
                     */
                     if (parentId == null) {
+
                         data = [
-                            { id: 1, n: 'Client 1', s: 1, p: true, c: false, ch: null }
-                            , { id: 2, n: 'Client 2', s: 0, c: false, ch: null }
-                            , { id: 3, n: 'this is shorter name', s: 0, c: false, ch: null }
-                            , {
-                                id: 4, n: 'Client 4', s: -1, cr: false, c: true, ch: [
-                                { id: 10, n: 'Client 5', s: 0, c: false, ch: null }
-                                , {
-                                    id: 11, n: 'Client 6', s: -1, cr: false, c: true, ch: [
-                                    { id: 10, n: 'Client 7', s: 0, c: false, ch: null }
-                                    , { id: 11, n: 'Client 8', s: 1, cr: false, c: true, ch: null }
-                                    ]
-                                }
-                                ]
-                            }
-                            , { id: 13, n: 'Client 13', s: 0, x: 'abc', c: false, ch: null }
-                            , { id: 14, n: 'Client 14', s: 0, c: false, p: true, ch: null }
+                              { id: 1, n: 'Node 1', x: '', s: 0, p: true, c: false, cr: false, ch: null }
+                            , { id: 2, n: 'Node 2', x: '', s: 1, p: true, c: false, cr: false, ch: null }
+                            , { id: 3, n: 'Node 3', x: '', s: 0, p: false, c: false, cr: false, ch: null }
+                            , { id: 4, n: 'Node 4', x: '', s: 0, p: true, c: true, cr: false, ch: null }
+                            , { id: 5, n: 'Node 5', x: '', s: -1, p: true, c: true, cr: false, ch: [
+                                  { id: 51, n: 'Node 5-1', x: '', s: 1, p: true, c: false, cr: false, ch: null }
+                                , { id: 52, n: 'Node 5-2', x: '', s: 0, p: true, c: true, cr: false, ch: [
+                                    { id: 521, n: 'Node 5-2-1', x: '', s: 0, p: true, c: false, cr: false, ch: null }
+                                ]}
+                            ]}
                         ];
-                    }  else if (parentId == 11) {
+                    } else if (parentId == 4) {
                         data = [
-                            { id: 12, n: 'Client 9', s: 0, c: false, ch: null }
-                            , { id: 13, n: 'Client 10 is a really long name to test horiz scrolling', s: 0, c: true, p: true, ch: null }
-                        ];
-                    } else if (parentId == 13) {
-                        data = [
-                            { id: 14, n: 'Client 15', s: 0, c: false, p: true, ch: null }
-                            , { id: 15, n: 'Client 16', s: 0, c: false, p: true, ch: null }
+                              { id: 41, n: 'Node 4-1', x: '', s: 0, p: true, c: false, cr: false, ch: null }
+                             
+
                         ];
                     }
 
@@ -130,14 +130,56 @@
 
 
                 
-                asyncTest("Testing Load", 1, function () {
+                asyncTest("JPTreeView Load", 1, function () {
                    
                     inAsyncTest = true;
                     $('#test').JPTreeView({ dataSource: gogetit, viewRestricted: true });//.on('onchange', function (e, p, c) { alert(p.id); });
                     ok(true, "async load");
+                
                 });
 
-                test("select node ", function () {
+                test("API : GetData", function () {
+                    expect(3);
+                    var nodes = $('#test').JPTreeView('getData', null, true);
+                    
+                    equal(nodes.length, 5, "GetData Should Return all 5 root Nodes");
+                    equal(nodes[4].c.length, 2, "GetData Should Return Node 5 -> Children, but not grand-children");
+                    ok((nodes[4].c[1].c == null), "Node 5-2-1 not returned from GetData");
+                });
+
+                asyncTest("API : Expand", 1, function () {
+
+                    inAsyncTest = true;
+                    $('#test').JPTreeView('expand', 4, '');//.on('onchange', function (e, p, c) { alert(p.id); });
+                    equal($('#test').JPTreeView('isExpanded', 4, ''), true, "Node 4 Should be expanded");
+
+                });
+
+                //select parent selects all descendents
+                //select all children selects parent
+                test("API : Select Node", function () {
+                    expect(2);
+                    
+                    $('#test').JPTreeView('select', 4, '');
+                    equal($('#test').JPTreeView('isSelected', 41, ''), true, "Node 4 and all of its descendents should be selected after selecting node 4");
+                    $('#test').JPTreeView('select', 521, '');
+                    equal($('#test').JPTreeView('isSelected', 5, ''), true, "Node 5 should be selected after selecting all of its children");
+                });
+
+                //select n-1 of n children select parent as mixed, recursive thorugh ancestry.
+                //deselect parent deselects all descendents
+                //select parent of not-yet-downloaded children -> selects children on download, recursive through descendents
+                //.. deselect does same
+                //getdata:      - does not return descendents of selected/notselected node
+                //select:       - behaves same as mouse click
+                //deselect
+                //isSelected
+                //revert
+                //commit
+                //haschanged
+                
+
+                /*test("select node ", function () {
                     $('#test').JPTreeView('select', 13, 'abc');
                     //var selected = $('#test').JPTreeView('isSelected', 13, 'abc');
                     var selected = $('#test')[0].isSelected(13, 'abc');
@@ -161,7 +203,7 @@
                     $('#test').JPTreeView('commit');
                     equal(false, $('#test')[0].hasChanged(), "Committed, now No Changes");
 
-                });
+                });*/
             });
 
 
