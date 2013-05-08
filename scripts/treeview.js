@@ -7,7 +7,7 @@
     var methods = {
         init: _initPlugin
         , getData: _exportData
-        , hasChanged: _hasChanged
+        , hasChanged : _hasChanged
         , revert: _revert
         , commit: _commit
         , select: _select
@@ -15,6 +15,7 @@
         , isSelected: _isSelected
         , expand: _expand
         , isExpanded: _isExpanded
+        , any: _any
     };
 
     $.fn.JPTreeView = function (method) {
@@ -51,14 +52,14 @@
 
             $listview[0].isSelected = _isSelected;
             $listview[0].hasChanged = _hasChanged;
-   
+    
             var id = $listview.attr('id');
-
+            
             if ($listview.parent().hasClass('treeview-wrapper')) {
                 $wrap = $listview.parent();
             } else {
-            $wrap = $listview.wrap('<div class="treeview-wrapper" onselectstart="return false">').parent();
-            $wrap.css('width', $listview.css('width')).css('height', $listview.css('height'));
+                $wrap = $listview.wrap('<div class="treeview-wrapper" onselectstart="return false">').parent();
+                $wrap.css('width', $listview.css('width')).css('height', $listview.css('height'));
             }
 
 
@@ -77,45 +78,45 @@
 
         function _createUL($ul, nodes) {
 
-            var $li;
+            
             $ul.empty();
-        $(nodes).each(function () {
-            var disabled = !((this.p == undefined) || (this.p));
+            $(nodes).each(function () {
+                var disabled = !((this.p == undefined) || (this.p));
+                var $li;
+                $li = $('<li></li>').data('haschildren', this.c)
+                    .data('id', this.id)
+                    .data('status', (this.s == 1) ? 'checked' : (this.s == 0) ? 'unchecked' : 'mixed')
+                    .data('ostatus', (this.s == 1) ? 'checked' : (this.s == 0) ? 'unchecked' : 'mixed')
+                    .data('enabled', ((this.p == undefined) || (this.p)))
+                    .data('cr', ((this.cr == undefined) || (!this.cr)) ? false : true)
+                    .addClass(disabled ? 'tv-disabled' : (this.s == 1) ? 'tv-checked' : (this.s == 0) ? 'tv-unchecked' : 'tv-mixed')
+                    .data('state', (this.s == 1) ? 'checked' : (this.s == 0) ? 'unchecked' : 'mixed')
+                    .data('ext', (this.x == undefined) ? '' : this.x )
+                    .text(this.n);
 
-            $li = $('<li></li>').attr('data-haschildren', this.c ? '1' : '0')
-                .attr('data-id', this.id)
-                .attr('data-status', (this.s == 1) ? 'checked' : (this.s == 0) ? 'unchecked' : 'mixed')
-                .attr('data-ostatus', (this.s == 1) ? 'checked' : (this.s == 0) ? 'unchecked' : 'mixed')
-                .attr('data-enabled', ((this.p == undefined) || (this.p)) ? 'true' : 'false')
-                .attr('data-cr', ((this.cr == undefined) || (!this.cr)) ? 'false' : 'true')
-                .addClass(disabled ? 'tv-disabled' : (this.s == 1) ? 'tv-checked' : (this.s == 0) ? 'tv-unchecked' : 'tv-mixed')
-                .attr('data-state', (this.s == 1) ? 'checked' : (this.s == 0) ? 'unchecked' : 'mixed')
-                .attr('data-ext', (this.x == undefined) ? '' : this.x)
-                .text(this.n);
 
 
+                //if deep, traverse through children.
+                if (this.ch && (this.ch.length > 0)) {
+                    var $cul = $('<ul class="treeview-node innerNode"></ul>');
+                    _createUL($cul, this.ch)
+                    $li.append($cul);
+                }
 
-            //if deep, traverse through children.
-            if (this.ch && (this.ch.length > 0)) {
-                var $cul = $('<ul class="treeview-node innerNode"></ul>');
-                _createUL($cul, this.ch)
-                $li.append($cul);
-            }
+                $ul.append($li);
+            });
 
-            $ul.append($li);
-        });
+        }
 
-    }
+        function _dummy(parentNode, deep) {
+            /*
+                expects [ { id : 0, n : '', s : true, ch : null } ]
+            */
 
-    function _dummy(parentNode, deep) {
-        /*
-            expects [ { id : 0, n : '', s : true, ch : null } ]
-        */
+            var parentId = null;
+            if (parentNode) { parentId = parentNode.id; }
 
-        var parentId = null;
-        if (parentNode) { parentId = parentNode.id; }
-
-        if (parentId == null) {
+            if (parentId == null) {
             return {
                 items: [
                     { id: 1, n: 'Client 1', s: 1, p: false, c: false, ch: null }
@@ -136,154 +137,154 @@
                     , { id: 14, n: 'Client 14', s: 0, c: false, p: false, ch: null }
                 ]
             };
-        } else if (parentId == 11) {
+            } else if (parentId == 11) {
             return {
                 items: [
                     { id: 12, n: 'Client 9', s: 0, c: false, ch: null }
                     , { id: 13, n: 'Client 10 is a really long name to test horiz scrolling', s: 0, c: true, p: false, ch: null }
                 ]
             };
-        } else if (parentId == 13) {
+            } else if (parentId == 13) {
             return {
                 items: [
                     { id: 19, n: 'Client 15', s: 0, c: false, p: false, ch: null }
                     , { id: 20, n: 'Client 16', s: 0, c: false, p: false, ch: null }
                 ]
             };
+            }
+
         }
 
-    }
+
+        function _init($item, isSubTree) {
+
+            if ($item[0].tagName.toLowerCase() == 'ul') {
+
+                //default to collapsed
+                if (isSubTree) { $item.addClass('collapsed').addClass("innerNode"); }
+                $item.addClass('treeview-node');
 
 
-    function _init($item, isSubTree) {
+                $item.find('>li').each(function () { _init($(this), true); });
 
-        if ($item[0].tagName.toLowerCase() == 'ul') {
+            } else if ($item[0].tagName.toLowerCase() == 'li') {
 
-            //default to collapsed
-            if (isSubTree) { $item.addClass('collapsed').addClass("innerNode"); }
-            $item.addClass('treeview-node');
+                var hasChildren = (($item.children().length) || ($item.data('haschildren')));
+                var $children = $item.children().detach();
+                var content = $item.text();
+                var enabled = $item.data('enabled');
 
+                $item.text('');
+                $item.data('expanded', (hasChildren) ? 'collapsed' : 'empty').removeClass('tv-expanded tv-collapsed tv-empty')
+                    .addClass((hasChildren) ? 'tv-collapsed' : 'tv-empty');
 
-            $item.find('>li').each(function () { _init($(this), true); });
+                $item.append($('<span class="icon_tv icon_tv_chevron"></span><span class="icon_tv icon_tv_check"></span>'))
+                    .append($('<span class="content">' + content + '</span>'))
+                    .append($children);
 
-        } else if ($item[0].tagName.toLowerCase() == 'li') {
+                $item.find('>ul').each(function () { _init($(this), true); });
 
-            var hasChildren = (($item.children().length) || ($item.attr('data-haschildren') == '1'));
-            var $children = $item.children().remove();
-            var content = $item.text();
-            var enabled = $item.attr('data-enabled') == 'true';
+                $item.on('click', '>.icon_tv_chevron', function () {
 
-            $item.text('');
-            $item.attr('data-expanded', (hasChildren) ? 'collapsed' : 'empty').removeClass('tv-expanded tv-collapsed tv-empty')
-                .addClass((hasChildren) ? 'tv-collapsed' : 'tv-empty');
+                    var $this = $(this);
 
-            $item.append($('<span class="icon_tv icon_tv_chevron"></span><span class="icon_tv icon_tv_check"></span>'))
-                .append($('<span class="content">' + content + '</span>'))
-                .append($children);
+                    var currentStatus = $(this).parent().data('expanded');
+                    if (!currentStatus) { currentStatus = 'empty'; }
 
-            $item.find('>ul').each(function () { _init($(this), true); });
-
-            $item.on('click', '>.icon_tv_chevron', function () {
-
-                var $this = $(this);
-
-                var currentStatus = $(this).parent().attr('data-expanded');
-                if (!currentStatus) { currentStatus = 'empty'; }
-
-                switch (currentStatus) {
-                    case 'empty': break;
-                    case 'expanded':
-                        var $subNode = $(this).parent().find('.treeview-node');
-                        if ($subNode && ($subNode.length > 0)) {
-                            $subNode.each(function () {
-                                $(this).hide('fast');
-                                $(this).parent().attr('data-expanded', 'collapsed').removeClass('tv-expanded tv-collapsed tv-empty').addClass('tv-collapsed');
-                            });
-                        }
-                        $(this).parent().attr('data-expanded', 'collapsed').removeClass('tv-expanded tv-collapsed tv-empty').addClass('tv-collapsed');
-                        break;
-                    case 'collapsed':
-                        var $node = $(this).parent();
-                        var $subNode = $node.find('>.treeview-node');
-                        if (!$subNode || ($subNode.length == 0)) {
-                            if ($node.attr('data-haschildren') == '1') {
+                    switch (currentStatus) {
+                        case 'empty': break;
+                        case 'expanded':
+                            var $subNode = $(this).parent().find('.treeview-node');
+                            if ($subNode && ($subNode.length > 0)) {
+                                $subNode.each(function () {
+                                    $(this).hide('fast');
+                                    $(this).parent().data('expanded', 'collapsed').removeClass('tv-expanded tv-collapsed tv-empty').addClass('tv-collapsed');
+                                });
+                            }
+                            $(this).parent().data('expanded', 'collapsed').removeClass('tv-expanded tv-collapsed tv-empty').addClass('tv-collapsed');
+                            break;
+                        case 'collapsed':
+                            var $node = $(this).parent();
+                            var $subNode = $node.find('>.treeview-node');
+                            if (!$subNode || ($subNode.length == 0)) {
+                                if ($node.data('haschildren') == '1') {
 
                                 _goGetMoreNodes($node, _exportNode($node));
 
+                                }
+
+
+
+                            } else {
+                                $subNode.show('fast');
                             }
+                            $(this).parent().data('expanded', 'expanded').removeClass('tv-collapsed tv-empty').addClass('tv-expanded');
 
-
-
-                        } else {
-                            $subNode.show('fast');
-                        }
-                        $(this).parent().attr('data-expanded', 'expanded').removeClass('tv-collapsed tv-empty').addClass('tv-expanded');
-
-                        break;
-                    default:
-                        alert('uh oh');
-                }
-            });
-
-            if (!enabled) {
-
-                if (!settings.viewRestricted) {
-                    $item.find('> .content').text('Restricted');
-                    $item.css('visibility', 'hidden').css('display', 'none');
-                } else {
-
-                    $item.removeClass('tv-unchecked tv-mixed tv-checked').addClass('tv-disabled');
-                }
-
-            } else {
-
-
-
-                $item.on('click', '>.content, >.icon_tv_check', function () {
-                    var $node = $(this).parent();
-                    var currentStatus = $node.attr('data-status');
-                    if (!currentStatus) { currentStatus = 'unchecked'; }
-                        
-
-                    switch (currentStatus) {
-                        case 'unchecked':
-                            /*
-                                -select + all descendents
-                                -eval ancestors
-                            */
-                            _selectNode($node, 'checked', 0);
                             break;
-                        case 'checked':
-                            /*  -unselect + all descendents
-                                -eval ancestors
-                            */
-                            _selectNode($node, 'unchecked', 0);
-                            break;
-                        case 'mixed':
-                            /*
-                                -same as 1
-                            */
+                        default:
+                            alert('uh oh');
+                    }
+                });
 
-                            _selectNode($node, 'unchecked', 0);
-                            break;
+                if (!enabled) {
 
-                        default: alert('uh oh');
+                    if (!settings.viewRestricted) {
+                        $item.find('> .content').text('Restricted');
+                        $item.css('visibility', 'hidden').css('display', 'none');
+                    } else {
+
+                        $item.removeClass('tv-unchecked tv-mixed tv-checked').addClass('tv-disabled');
                     }
 
+                } else {
+
+
+
+                    $item.on('click', '>.content, >.icon_tv_check', function () {
+                        var $node = $(this).parent();
+                        var currentStatus = $node.data('status');
+                        if (!currentStatus) { currentStatus = 'unchecked'; }
+
+
+                        switch (currentStatus) {
+                            case 'unchecked':
+                                /*
+                                    -select + all descendents
+                                    -eval ancestors
+                                */
+                                _selectNode($node, 'checked', 0);
+                                break;
+                            case 'checked':
+                                /*  -unselect + all descendents
+                                    -eval ancestors
+                                */
+                                _selectNode($node, 'unchecked', 0);
+                                break;
+                            case 'mixed':
+                                /*
+                                    -same as 1
+                                */
+
+                                _selectNode($node, 'unchecked', 0);
+                                break;
+
+                            default: alert('uh oh');
+                        }
+
                         
 
-                });
+                    });
+                }
             }
-        }
 
 
 
 
 
 
-    };
+        };
 
-    function _goGetMoreNodes($node, parent) {
+        function _goGetMoreNodes($node, parent) {
             var $ul;
             var $tmp = $('<li class="temp-node">' + settings.waitText + '</li>');
 
@@ -300,150 +301,152 @@
             }
 
 
-        //need to get data from caller
-        var result = settings.dataSource(parent);
+            //need to get data from caller
+            var result = settings.dataSource(parent);
 
-        function _createDynNode(data, parent) {
+            function _createDynNode(data, parent) {
                 _createUL($ul, data.items);
 
 
                 _init($ul, (parent != null));
 
     
-            //if parent's selection has changed prior to expansion, than we need to update th children
-            if (($node.attr('data-status') == 'checked') || ($node.attr('data-status') == 'unchecked')) {
-                var newState = $node.attr('data-status');
-                        $ul.find('>li').each(function () {
-                    if ($(this).attr('data-enabled') == 'true') {
-                        $(this).attr('data-status', newState).removeClass('tv-checked tv-unchecked tv-mixed').addClass('tv-' + newState);
-                    }
-                });
+                //if parent's selection has changed prior to expansion, than we need to update th children
+                if (($node.data('status') == 'checked') || ($node.data('status') == 'unchecked')) {
+                    var newState = $node.data('status');
+                    $ul.find('>li').each(function () {
+                        if ($(this).data('enabled')) {
+                            $(this).data('status', newState).removeClass('tv-checked tv-unchecked tv-mixed').addClass('tv-' + newState);
+                        }
+                    });
+                }
+                $ul.removeClass('collapsed');
+
             }
-                    $ul.removeClass('collapsed');
+
+            if ((result.fail) && (typeof (result.fail) == 'function')) {
+
+                result.fail(function () { $ul.find(' > li').text(settings.failText); });
+
+            }
+
+            //is a promise
+            if ((result.done) && (typeof (result.done) == 'function')) {
+
+
+                result.done(function (data, status, jqXHR) {
+           
+                    _createDynNode(data, parent);
+
+                });
+                //var f = result.done;
+                //result.done = function (data, status, jqXHR) {
+
+                //    _createDynNode(data, parent);
+
+                //    f(data, status, jqXHR);
+                //};
+
+            } else {
+                _createDynNode(result);
+            }
+
+
 
         }
-
-        if ((result.fail) && (typeof (result.fail) == 'function')) {
-
-            result.fail(function () { $ul.find(' > li').text(settings.failText); });
-
-        }
-
-        //is a promise
-        if ((result.done) && (typeof (result.done) == 'function')) {
-
-
-            result.done(function (data, status, jqXHR) {
-
-                _createDynNode(data, parent);
-
-            });
-            //var f = result.done;
-            //result.done = function (data, status, jqXHR) {
-
-            //    _createDynNode(data, parent);
-
-            //    f(data, status, jqXHR);
-            //};
-
-        } else {
-            _createDynNode(result);
-        }
-
-
-
-    }
 
 
     function _selectNode(node, status, direction, deep) {
 
-        var myStatus = status;
-        var myStatusDisplay = status;
+            var myStatus = status;
+            var myStatusDisplay = status;
 
         if (deep == null) { deep = true; }
 
-        if (status == 'checked') {
-            var hasRestrictedChildren = ((node.attr('data-cr') == 'true') || (node.find('li[data-enabled="false"]').length))
-            myStatusDisplay = (hasRestrictedChildren) ? (settings.viewRestricted) ? 'mixed' : 'checked' : 'checked'
-            //myStatusDisplay = myStatus;
+            if (status == 'checked') {
+                var hasRestrictedChildren = ((node.data('cr')) || (node.find('li').filter(function (index) { return !$(this).data('enabled') }).length))
+                myStatusDisplay = (hasRestrictedChildren) ? (settings.viewRestricted) ? 'mixed' : 'checked' : 'checked'
+                //myStatusDisplay = myStatus;
 
 
-        }
-        if (node.attr('data-enabled') == 'false') {
-            myStatusDisplay = 'disabled';
-        }
+            }
+            if (!node.data('enabled')) {
+                myStatusDisplay = 'disabled';
+            }
 
-        switch (direction) {
-            case 0: //both
+            switch (direction) {
+                case 0: //both
 
 
-                node.attr('data-status', myStatus).removeClass('tv-checked tv-unchecked tv-mixed').addClass('tv-' + myStatusDisplay);
-                    
-                //only triggering on self.  Havn't decided if i need to trigger on all ancestors/descendents whose state changes as a result.
-                $listview.trigger('onchange', [_exportNode(node), _hasChanged()]);
+                    node.data('status', myStatus).removeClass('tv-checked tv-unchecked tv-mixed').addClass('tv-' + myStatusDisplay);
 
-                if (deep) {
-                    node.find('> ul > li').each(function () { _selectNode($(this), status, -1); });
+                    //only triggering on self.  Havn't decided if i need to trigger on all ancestors/descendents whose state changes as a result.
+                    $listview.trigger('onchange', [_exportNode(node), _hasChanged()]);
+
+                    if (deep) {
+                        node.find('> ul > li').each(function () { _selectNode($(this), status, -1); });
+
+                        if (node.parent().parent()[0].tagName.toLowerCase() == 'li') { _selectNode(node.parent().parent(), status, 1); }
+                    }
+                    break;
+                case 1: //upwards
+
+                    var childCount = node.find('li').length;
+                    var selectedCount = node.find('li').filter(function (index) {
+                        
+                        return $(this).data('status') == "checked"
+                    }).length;
+                    var mixedCount = node.find('li').filter(function (index) {
+                        return $(this).data('status') == "mixed"
+                    }).length;
+                    var disabledCount = node.find('li').filter(function (index) {
+                        return !$(this).data('enabled')
+                    }).length;
+
+
+                    if ((selectedCount == 0) && (mixedCount == 0)) {
+                        node.data('status', 'unchecked').removeClass('tv-checked tv-unchecked tv-mixed').addClass('tv-unchecked');
+
+
+                    } else if (selectedCount == childCount) {
+                        node.data('status', 'checked').removeClass('tv-checked tv-unchecked tv-mixed').addClass('tv-checked');
+
+                    } else if ((!settings.viewRestricted) && (disabledCount > 0) && (childCount == (disabledCount + mixedCount + selectedCount))) {
+
+
+                        node.data('status', 'mixed').removeClass('tv-checked tv-unchecked tv-mixed').addClass('tv-checked');
+                    } else if (mixedCount > 0) {
+                        node.data('status', 'mixed').removeClass('tv-checked tv-unchecked tv-mixed').addClass('tv-mixed');
+
+                    } else {
+                        node.data('status', 'mixed').removeClass('tv-checked tv-unchecked tv-mixed').addClass('tv-mixed');
+
+                    }
 
                     if (node.parent().parent()[0].tagName.toLowerCase() == 'li') { _selectNode(node.parent().parent(), status, 1); }
-                }
-                break;
-            case 1: //upwards
-                //if all children are selected, set to 1, if none, -1, if some 0
-                //var childCount = node.find('> ul > li').length;
-                //var selectedCount = node.find('> ul > li[data-status="checked"]').length;
-                //var mixedCount = node.find('> ul > li[data-status="mixed"]').length;
-                //var enabledCount = (childCount - node.find('> ul > li[data-cr="true"]').length) - node.find('> ul > li[data-enabled="false"]').length;
 
-                var childCount = node.find('li').length;
-                var selectedCount = node.find('li[data-status="checked"]').length;
-                var mixedCount = node.find('li[data-status="mixed"]').length;
-                var disabledCount = node.find('li[data-enabled="false"]').length;
+                    break;
+                case -1:
+                    if (node.data('enabled')) {
 
 
-                if ((selectedCount == 0) && (mixedCount == 0)) {
-                    node.attr('data-status', 'unchecked').removeClass('tv-checked tv-unchecked tv-mixed').addClass('tv-unchecked');
+                        var childCount = node.find('> ul > li').length;
+                        node.data('status', myStatus).removeClass('tv-checked tv-unchecked tv-mixed').addClass('tv-' + myStatusDisplay);
+                        node.find('> ul > li').each(function () { _selectNode($(this), status, -1); });
+                    }
+                    break;
+                default:
+                    alert('uh oh');
+            }
 
-
-                } else if (selectedCount == childCount) {
-                    node.attr('data-status', 'checked').removeClass('tv-checked tv-unchecked tv-mixed').addClass('tv-checked');
-
-                } else if ((!settings.viewRestricted) && (disabledCount > 0) && (childCount == (disabledCount + mixedCount + selectedCount))) {
-
-
-                    node.attr('data-status', 'mixed').removeClass('tv-checked tv-unchecked tv-mixed').addClass('tv-checked');
-                } else if (mixedCount > 0) {
-                    node.attr('data-status', 'mixed').removeClass('tv-checked tv-unchecked tv-mixed').addClass('tv-mixed');
-
-                } else {
-                    node.attr('data-status', 'mixed').removeClass('tv-checked tv-unchecked tv-mixed').addClass('tv-mixed');
-
-                }
-                    
-                if (node.parent().parent()[0].tagName.toLowerCase() == 'li') { _selectNode(node.parent().parent(), status, 1); }
-
-                break;
-            case -1:
-                if (node.attr('data-enabled') == 'true') {
-
-
-                    var childCount = node.find('> ul > li').length;
-                    node.attr('data-status', myStatus).removeClass('tv-checked tv-unchecked tv-mixed').addClass('tv-' + myStatusDisplay);
-                    node.find('> ul > li').each(function () { _selectNode($(this), status, -1); });
-                }
-                break;
-            default:
-                alert('uh oh');
         }
-
-    }
 
 
     function _exportNode($node) {
         return {
-            id: $node.attr('data-id')
-                    , d: ($node.attr('data-status') == 'checked') ? 1 : -1
-                    , x: $node.attr('data-ext')
+            id: $node.data('id')
+                    , d: ($node.data('status') == 'checked') ? 1 : -1
+                    , x: $node.data('ext')
         };
         
     }
@@ -462,15 +465,16 @@
 
         if ($this[0].tagName.toLowerCase() == 'li') {
 
-
-            deep = (($this.attr('data-status') == 'mixed'));
-              
-            return {
-                    id: $this.attr('data-id')
-                        , d: ($this.attr('data-status') == 'checked') ? 1 : ($this.attr('data-status') == 'unchecked') ? 0 : -1
-                    , x: $this.attr('data-ext')
+             
+            deep = (($this.data('status') == 'mixed'));
+               
+                return {
+                    id: $this.data('id')
+                    , d: ($this.data('status') == 'checked') ? 1 : ($this.data('status') == 'unchecked') ? 0 : -1
+                    , x: $this.data('ext')
+                    , hc: $this.data('status') == 'mixed'
                     , c: (deep && ($this.find('> ul').length > 0)) ? _exportData($this.find('> ul'), deep) : null
-            };
+                };
       
         } else {
 
@@ -489,29 +493,28 @@
 
             if (!$listview) { $listview = $(this); }
             settings = $listview.data('settings');
-            return $listview.find('li').filter(function (index) { return $(this).attr('data-status') != $(this).attr('data-ostatus'); }).length > 0;
+            return $listview.find('li').filter(function (index) { return $(this).data('status') != $(this).data('ostatus'); }).length > 0;
      
+    }
+
+    function _any() {
+
+        if (!$listview) { $listview = $(this); }
+        return $listview.find('li').filter(function (index) { return (($(this).data('status') == 'checked') || ($(this).data('status') == 'mixed')) }).length > 0;
+
     }
 
     function _revert() {
         return this.each(function () {
-            if (!$listview) { $listview = $(this); }
+        if (!$listview) { $listview = $(this); }
             settings = $listview.data('settings');
 
             if (_hasChanged()) {
 
-                $listview.empty();
-                _goGetMoreNodes($listview, null);
+            $listview.empty();
+            _goGetMoreNodes($listview, null);
             }
-            //settings = $listview.data('settings');
 
-
-
-            //$listview.find('li').filter(function (index) { return $(this).attr('data-status') != $(this).attr('data-ostatus'); }).each(function () {
-            //    var $this = $(this);
-            //    // $this.attr('data-status', $this.attr('data-ostatus'));
-            //    _selectNode($this, $this.attr('data-ostatus'), 0, false);
-            //});
         });
     }
 
@@ -519,9 +522,9 @@
         return this.each(function () {
             if (!$listview) { $listview = $(this); }
             settings = $listview.data('settings');
-            $listview.find('li').filter(function (index) { return $(this).attr('data-status') != $(this).attr('data-ostatus'); }).each(function () {
+            $listview.find('li').filter(function (index) { return $(this).data('status') != $(this).data('ostatus'); }).each(function () {
                 var $this = $(this);
-                $this.attr('data-ostatus', $this.attr('data-status'));
+                $this.data('ostatus', $this.data('status'));
             });
         });
     }
@@ -536,6 +539,8 @@
             }
         });
     }
+
+
 
     function _isExpanded(id, ext) {
         if (!$listview) { $listview = $(this); }
@@ -570,7 +575,7 @@
     }
 
     function _match(id, ext) {
-        var m1 = $listview.find('li[data-id="' + id + '"]');
+        var m1 = $listview.find('li').filter(function (index) { return $(this).data('id') == id });
 
 
         if ((m1) && (m1.length > 0)) {
@@ -579,7 +584,7 @@
 
             return m1.filter(function (index) {
                 var $this = $(this);
-                var nodeExt = $this.attr('data-ext');
+                var nodeExt = $this.data('ext');
                 nodeExt = (nodeExt === undefined) ? '' : nodeExt;
 
                 return (((ext.length == 0) && (nodeExt == '')) || ((ext.length > 0) && (nodeExt == ext)));
@@ -596,7 +601,7 @@
         settings = $listview.data('settings');
             var m1 = _match(id, ext);
             if (m1 && (m1.length > 0)) {
-                var s = $(m1[0]).attr('data-status');
+                var s = $(m1[0]).data('status');
                 return s == 'checked';
             }
    
@@ -612,12 +617,12 @@
         if (m1) { 
 
             m1.each(function () {
-                if ($(this).attr('data-status') != status) {
+                if ($(this).data('status') != status) {
                     _selectNode($(this), status, 0, true);
                 }
             });
         }
-  
+
     }
 
 })(jQuery);
