@@ -1,6 +1,9 @@
 ﻿
 (function ($) {
 
+
+    $.fn.JPTreeView = function (method) {
+
     var $listview;
     var settings;
 
@@ -18,8 +21,6 @@
         , any: _any
     };
 
-    $.fn.JPTreeView = function (method) {
-
         // Method calling logic
         if (methods[method]) {
             return methods[method].apply(this, Array.prototype.slice.call(arguments, 1));
@@ -28,8 +29,6 @@
         } else {
             $.error('Method ' + method + ' does not exist on JPTreeView');
         }
-
-    };
 
 
     function _initPlugin(options) {
@@ -61,7 +60,6 @@
                 $wrap = $listview.wrap('<div class="treeview-wrapper" onselectstart="return false">').parent();
                 $wrap.css('width', $listview.css('width')).css('height', $listview.css('height'));
             }
-
 
 
             _goGetMoreNodes($listview, null);
@@ -380,14 +378,17 @@
 
                     node.data('status', myStatus).removeClass('tv-checked tv-unchecked tv-mixed').addClass('tv-' + myStatusDisplay);
 
-                    //only triggering on self.  Havn't decided if i need to trigger on all ancestors/descendents whose state changes as a result.
-                    $listview.trigger('onchange', [_exportNode(node), _hasChanged()]);
+
 
                     if (deep) {
                         node.find('> ul > li').each(function () { _selectNode($(this), status, -1); });
 
                         if (node.parent().parent()[0].tagName.toLowerCase() == 'li') { _selectNode(node.parent().parent(), status, 1); }
                     }
+
+                        //only triggering on self.  Havn't decided if i need to trigger on all ancestors/descendents whose state changes as a result.
+                        $listview.trigger('onchange', [_exportNode(node), _hasChanged()]);
+
                     break;
                 case 1: //upwards
 
@@ -445,7 +446,7 @@
     function _exportNode($node) {
         return {
             id: $node.data('id')
-                    , d: ($node.data('status') == 'checked') ? 1 : -1
+                        , s: ($node.data('status') == 'checked') ? 1 : -1
                     , x: $node.data('ext')
         };
         
@@ -470,10 +471,10 @@
                
                 return {
                     id: $this.data('id')
-                    , d: ($this.data('status') == 'checked') ? 1 : ($this.data('status') == 'unchecked') ? 0 : -1
+                        , s: ($this.data('status') == 'checked') ? 1 : ($this.data('status') == 'unchecked') ? 0 : -1
                     , x: $this.data('ext')
-                    , hc: $this.data('status') == 'mixed'
-                    , c: (deep && ($this.find('> ul').length > 0)) ? _exportData($this.find('> ul'), deep) : null
+                        , c: $this.data('status') == 'mixed'
+                        , ch: (deep && ($this.find('> ul').length > 0)) ? _exportData($this.find('> ul'), deep) : null
                 };
       
         } else {
@@ -624,5 +625,9 @@
         }
 
     }
+    };
+
+
+
 
 })(jQuery);
