@@ -1,4 +1,4 @@
-﻿
+
 (function ($) {
 
 
@@ -41,6 +41,7 @@
             , waitText: 'Retrieving Data'
             , failText: 'An Error Occurred'
             , viewRestricted: false
+            , singleSelect:false
         }, options);
 
         return this.each(function () {
@@ -251,6 +252,12 @@
                                     -eval ancestors
                                 */
                                 _selectNode($node, 'checked', 0);
+
+                                if (settings.singleSelect) {
+                                    $node.siblings().each(function () {
+                                        _selectNode($(this), 'unchecked', 0, true);
+                                    });
+                                }
                                 break;
                             case 'checked':
                                 /*  -unselect + all descendents
