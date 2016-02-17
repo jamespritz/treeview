@@ -236,9 +236,7 @@
                     }
 
                 } else {
-
-
-
+                     
                     $item.on('click', '>.content, >.icon_tv_check', function () {
                         var $node = $(this).parent();
                         var currentStatus = $node.data('status');
@@ -250,6 +248,7 @@
                                 /*
                                     -select + all descendents
                                     -eval ancestors
+                                    - if singleSelect, unselect the siblings and the parents siblings if any
                                 */
                                 _selectNode($node, 'checked', 0);
 
@@ -257,6 +256,16 @@
                                     $node.siblings().each(function () {
                                         _selectNode($(this), 'unchecked', 0, true);
                                     });
+                                    if ($node.parents('ul > li').length > 0) {
+                                        $node.parents('ul > li').each(function () {
+                                            $(this).siblings().each(function () {
+                                                _selectNode($(this), 'unchecked', 0);
+                                            });  
+                                        });
+                                    }
+
+                                    //$node.parent('> ul > li').each(function () { _selectNode($(this), status, -1); });
+
                                 }
                                 break;
                             case 'checked':
