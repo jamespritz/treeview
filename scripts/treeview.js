@@ -1,4 +1,16 @@
-﻿
+/*
+         data = [] definitions
+
+                   id: unique id of node within scope of tree
+                   n:  display name
+                   x:  extended data
+                   s:  selected state : { -1:mixed, 0:not selected, 1:selected }
+                   p:  selection permitted
+                   c:  has children
+                   cr: has children that are restricted (p = 0)
+                   ch: child nodes array
+                   
+*/
 (function ($) {
 
 
@@ -41,6 +53,7 @@
             , waitText: 'Retrieving Data'
             , failText: 'An Error Occurred'
             , viewRestricted: false
+            , singleSelect:false
         }, options);
 
         return this.each(function () {
@@ -235,9 +248,7 @@
                     }
 
                 } else {
-
-
-
+                     
                     $item.on('click', '>.content, >.icon_tv_check', function () {
                         var $node = $(this).parent();
                         var currentStatus = $node.data('status');
@@ -249,14 +260,52 @@
                                 /*
                                     -select + all descendents
                                     -eval ancestors
+                                    - if singleSelect, unselect the siblings and the parents siblings if any
                                 */
-                                _selectNode($node, 'checked', 0);
+                                if (settings.singleSelect) {
+                                    if ($node.parents('ul > li').length > 0) {
+                                        $node.parents('ul > li').each(function () {
+                                            //In first parent, uncheck it and it's siblings.
+                                            if ($(this).parents('ul > li').length == 0) {
+                                                _selectNode($(this), 'unchecked', 0);
+                                                $(this).siblings().each(function () {
+                                                    _selectNode($(this), 'unchecked', 0);
+                                                });
+                                            }
+                                        });
+                                    } else {
+                                        $node.siblings().each(function () {
+                                            _selectNode($(this), 'unchecked', 0, true);
+                                        });
+                                    }
+                                    _selectNode($node, 'checked', 0);//select node
+
+
+                                }
                                 break;
                             case 'checked':
                                 /*  -unselect + all descendents
                                     -eval ancestors
                                 */
-                                _selectNode($node, 'unchecked', 0);
+                                if (settings.singleSelect) {
+                                    //If siblings are there, uncheck all of them and leave the one clicked checked.
+                                      var siblingsChecked = 0;
+                                    $node.siblings().each(function () {
+                                        if($(this).data('status') =='checked')
+                                            siblingsChecked++;
+                                    });
+                                    var siblingsCount = $node.siblings().length;
+                                    //uncheck all siblings if all are checked 
+                                    if (siblingsCount == siblingsChecked && siblingsCount > 1)
+                                        $node.siblings().each(function () {
+                                            _selectNode($(this), 'unchecked', 0);
+                                        });
+                                    else //or just uncheck the single node
+                                        _selectNode($node, 'unchecked', 0);
+                                     
+                                } else {
+                                    _selectNode($node, 'unchecked', 0);
+                                }
                                 break;
                             case 'mixed':
                                 /*
