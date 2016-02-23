@@ -1,4 +1,16 @@
-﻿
+/*
+         data = [] definitions
+
+                   id: unique id of node within scope of tree
+                   n:  display name
+                   x:  extended data
+                   s:  selected state : { -1:mixed, 0:not selected, 1:selected }
+                   p:  selection permitted
+                   c:  has children
+                   cr: has children that are restricted (p = 0)
+                   ch: child nodes array
+                   
+*/
 (function ($) {
 
 
@@ -21,14 +33,15 @@
         , any: _any
     };
 
-        // Method calling logic
-        if (methods[method]) {
-            return methods[method].apply(this, Array.prototype.slice.call(arguments, 1));
-        } else if (typeof method === 'object' || !method) {
-            return methods.init.apply(this, arguments);
-        } else {
-            $.error('Method ' + method + ' does not exist on JPTreeView');
-        }
+    // Method calling logic
+    if (methods[method]) {
+        return methods[method].apply(this, Array.prototype.slice.call(arguments, 1));
+    } else if (typeof method === 'object' || !method) {
+        return methods.init.apply(this, arguments);
+    } else {
+        $.error('Method ' + method + ' does not exist on JPTreeView');
+    }
+
 
 
     function _initPlugin(options) {
@@ -41,6 +54,7 @@
             , waitText: 'Retrieving Data'
             , failText: 'An Error Occurred'
             , viewRestricted: false
+            , singleSelect:false
         }, options);
 
         return this.each(function () {
@@ -74,215 +88,235 @@
 
     };
 
-        function _createUL($ul, nodes) {
+    function _createUL($ul, nodes) {
 
             
-            $ul.empty();
-            $(nodes).each(function () {
-                var disabled = !((this.p == undefined) || (this.p));
-                var $li;
-                $li = $('<li></li>').data('haschildren', this.c)
-                    .data('id', this.id)
-                    .data('status', (this.s == 1) ? 'checked' : (this.s == 0) ? 'unchecked' : 'mixed')
-                    .data('ostatus', (this.s == 1) ? 'checked' : (this.s == 0) ? 'unchecked' : 'mixed')
-                    .data('enabled', ((this.p == undefined) || (this.p)))
-                    .data('cr', ((this.cr == undefined) || (!this.cr)) ? false : true)
-                    .addClass(disabled ? 'tv-disabled' : (this.s == 1) ? 'tv-checked' : (this.s == 0) ? 'tv-unchecked' : 'tv-mixed')
-                    .data('state', (this.s == 1) ? 'checked' : (this.s == 0) ? 'unchecked' : 'mixed')
-                    .data('ext', (this.x == undefined) ? '' : this.x )
-                    .text(this.n);
+        $ul.empty();
+        $(nodes).each(function () {
+            var disabled = !((this.p == undefined) || (this.p));
+            var $li;
+            $li = $('<li></li>').data('haschildren', this.c)
+                .data('id', this.id)
+                .data('status', (this.s == 1) ? 'checked' : (this.s == 0) ? 'unchecked' : 'mixed')
+                .data('ostatus', (this.s == 1) ? 'checked' : (this.s == 0) ? 'unchecked' : 'mixed')
+                .data('enabled', ((this.p == undefined) || (this.p)))
+                .data('cr', ((this.cr == undefined) || (!this.cr)) ? false : true)
+                .addClass(disabled ? 'tv-disabled' : (this.s == 1) ? 'tv-checked' : (this.s == 0) ? 'tv-unchecked' : 'tv-mixed')
+                .data('state', (this.s == 1) ? 'checked' : (this.s == 0) ? 'unchecked' : 'mixed')
+                .data('ext', (this.x == undefined) ? '' : this.x )
+                .text(this.n);
 
 
 
-                //if deep, traverse through children.
-                if (this.ch && (this.ch.length > 0)) {
-                    var $cul = $('<ul class="treeview-node innerNode"></ul>');
-                    _createUL($cul, this.ch)
-                    $li.append($cul);
-                }
-
-                $ul.append($li);
-            });
-
-        }
-
-        function _dummy(parentNode, deep) {
-            /*
-                expects [ { id : 0, n : '', s : true, ch : null } ]
-            */
-
-            var parentId = null;
-            if (parentNode) { parentId = parentNode.id; }
-
-            if (parentId == null) {
-            return {
-                items: [
-                    { id: 1, n: 'Client 1', s: 1, p: false, c: false, ch: null }
-                    , { id: 2, n: 'Client 2', s: 0, c: false, ch: null }
-                    , { id: 3, n: 'this is shorter name', s: 0, c: false, ch: null }
-                    , {
-                        id: 4, n: 'Client 4', s: 0, cr: true, c: true, ch: [
-                        { id: 10, n: 'Client 5', s: 0, c: false, ch: null }
-                        , {
-                            id: 11, n: 'Client 6', s: 0, cr: true, c: true, ch: [
-                            { id: 16, n: 'Client 7', s: 0, c: false, ch: null }
-                            , { id: 17, n: 'Client 8', s: 0, cr: true, c: true, ch: null }
-                            ]
-                        }
-                        ]
-                    }
-                    , { id: 13, n: 'Client 13', s: 0, c: false, ch: null }
-                    , { id: 14, n: 'Client 14', s: 0, c: false, p: false, ch: null }
-                ]
-            };
-            } else if (parentId == 11) {
-            return {
-                items: [
-                    { id: 12, n: 'Client 9', s: 0, c: false, ch: null }
-                    , { id: 13, n: 'Client 10 is a really long name to test horiz scrolling', s: 0, c: true, p: false, ch: null }
-                ]
-            };
-            } else if (parentId == 13) {
-            return {
-                items: [
-                    { id: 19, n: 'Client 15', s: 0, c: false, p: false, ch: null }
-                    , { id: 20, n: 'Client 16', s: 0, c: false, p: false, ch: null }
-                ]
-            };
+            //if deep, traverse through children.
+            if (this.ch && (this.ch.length > 0)) {
+                var $cul = $('<ul class="treeview-node innerNode"></ul>');
+                _createUL($cul, this.ch)
+                $li.append($cul);
             }
 
+            $ul.append($li);
+        });
+
+    }
+
+    function _dummy(parentNode, deep) {
+        /*
+            expects [ { id : 0, n : '', s : true, ch : null } ]
+        */
+
+        var parentId = null;
+        if (parentNode) { parentId = parentNode.id; }
+
+        if (parentId == null) {
+        return {
+            items: [
+                { id: 1, n: 'Client 1', s: 1, p: false, c: false, ch: null }
+                , { id: 2, n: 'Client 2', s: 0, c: false, ch: null }
+                , { id: 3, n: 'this is shorter name', s: 0, c: false, ch: null }
+                , {
+                    id: 4, n: 'Client 4', s: 0, cr: true, c: true, ch: [
+                    { id: 10, n: 'Client 5', s: 0, c: false, ch: null }
+                    , {
+                        id: 11, n: 'Client 6', s: 0, cr: true, c: true, ch: [
+                        { id: 16, n: 'Client 7', s: 0, c: false, ch: null }
+                        , { id: 17, n: 'Client 8', s: 0, cr: true, c: true, ch: null }
+                        ]
+                    }
+                    ]
+                }
+                , { id: 13, n: 'Client 13', s: 0, c: false, ch: null }
+                , { id: 14, n: 'Client 14', s: 0, c: false, p: false, ch: null }
+            ]
+        };
+        } else if (parentId == 11) {
+        return {
+            items: [
+                { id: 12, n: 'Client 9', s: 0, c: false, ch: null }
+                , { id: 13, n: 'Client 10 is a really long name to test horiz scrolling', s: 0, c: true, p: false, ch: null }
+            ]
+        };
+        } else if (parentId == 13) {
+        return {
+            items: [
+                { id: 19, n: 'Client 15', s: 0, c: false, p: false, ch: null }
+                , { id: 20, n: 'Client 16', s: 0, c: false, p: false, ch: null }
+            ]
+        };
         }
 
+    }
 
-        function _init($item, isSubTree) {
+    function _init($item, isSubTree) {
 
-            if ($item[0].tagName.toLowerCase() == 'ul') {
+        if ($item[0].tagName.toLowerCase() == 'ul') {
 
-                //default to collapsed
-                if (isSubTree) { $item.addClass('collapsed').addClass("innerNode"); }
-                $item.addClass('treeview-node');
+            //default to collapsed
+            if (isSubTree) { $item.addClass('collapsed').addClass("innerNode"); }
+            $item.addClass('treeview-node');
 
 
-                $item.find('>li').each(function () { _init($(this), true); });
+            $item.find('>li').each(function () { _init($(this), true); });
 
-            } else if ($item[0].tagName.toLowerCase() == 'li') {
+        } else if ($item[0].tagName.toLowerCase() == 'li') {
 
-                var hasChildren = (($item.children().length) || ($item.data('haschildren')));
-                var $children = $item.children().detach();
-                var content = $item.text();
-                var enabled = $item.data('enabled');
+            var hasChildren = (($item.children().length) || ($item.data('haschildren')));
+            var $children = $item.children().detach();
+            var content = $item.text();
+            var enabled = $item.data('enabled');
 
-                $item.text('');
-                $item.data('expanded', (hasChildren) ? 'collapsed' : 'empty').removeClass('tv-expanded tv-collapsed tv-empty')
-                    .addClass((hasChildren) ? 'tv-collapsed' : 'tv-empty');
+            $item.text('');
+            $item.data('expanded', (hasChildren) ? 'collapsed' : 'empty').removeClass('tv-expanded tv-collapsed tv-empty')
+                .addClass((hasChildren) ? 'tv-collapsed' : 'tv-empty');
 
-                $item.append($('<span class="icon_tv icon_tv_chevron"></span><span class="icon_tv icon_tv_check"></span>'))
-                    .append($('<span class="content">' + content + '</span>'))
-                    .append($children);
+            $item.append($('<span class="icon_tv icon_tv_chevron"></span><span class="icon_tv icon_tv_check"></span>'))
+                .append($('<span class="content">' + content + '</span>'))
+                .append($children);
 
-                $item.find('>ul').each(function () { _init($(this), true); });
+            $item.find('>ul').each(function () { _init($(this), true); });
 
-                $item.on('click', '>.icon_tv_chevron', function () {
+            $item.on('click', '>.icon_tv_chevron', function () {
 
-                    var $this = $(this);
+                var $this = $(this);
 
-                    var currentStatus = $(this).parent().data('expanded');
-                    if (!currentStatus) { currentStatus = 'empty'; }
+                var currentStatus = $(this).parent().data('expanded');
+                if (!currentStatus) { currentStatus = 'empty'; }
 
-                    switch (currentStatus) {
-                        case 'empty': break;
-                        case 'expanded':
-                            var $subNode = $(this).parent().find('.treeview-node');
-                            if ($subNode && ($subNode.length > 0)) {
-                                $subNode.each(function () {
-                                    $(this).hide('fast');
-                                    $(this).parent().data('expanded', 'collapsed').removeClass('tv-expanded tv-collapsed tv-empty').addClass('tv-collapsed');
-                                });
+                switch (currentStatus) {
+                    case 'empty': break;
+                    case 'expanded':
+                        var $subNode = $(this).parent().find('.treeview-node');
+                        if ($subNode && ($subNode.length > 0)) {
+                            $subNode.each(function () {
+                                $(this).hide('fast');
+                                $(this).parent().data('expanded', 'collapsed').removeClass('tv-expanded tv-collapsed tv-empty').addClass('tv-collapsed');
+                            });
+                        }
+                        $(this).parent().data('expanded', 'collapsed').removeClass('tv-expanded tv-collapsed tv-empty').addClass('tv-collapsed');
+                        break;
+                    case 'collapsed':
+                        var $node = $(this).parent();
+                        var $subNode = $node.find('>.treeview-node');
+                        if (!$subNode || ($subNode.length == 0)) {
+                            if ($node.data('haschildren') == '1') {
+
+                            _goGetMoreNodes($node, _exportNode($node));
+
                             }
-                            $(this).parent().data('expanded', 'collapsed').removeClass('tv-expanded tv-collapsed tv-empty').addClass('tv-collapsed');
-                            break;
-                        case 'collapsed':
-                            var $node = $(this).parent();
-                            var $subNode = $node.find('>.treeview-node');
-                            if (!$subNode || ($subNode.length == 0)) {
-                                if ($node.data('haschildren') == '1') {
-
-                                _goGetMoreNodes($node, _exportNode($node));
-
-                                }
 
 
 
-                            } else {
-                                $subNode.show('fast');
-                            }
-                            $(this).parent().data('expanded', 'expanded').removeClass('tv-collapsed tv-empty').addClass('tv-expanded');
+                        } else {
+                            $subNode.show('fast');
+                        }
+                        $(this).parent().data('expanded', 'expanded').removeClass('tv-collapsed tv-empty').addClass('tv-expanded');
 
-                            break;
-                        default:
-                            alert('uh oh');
-                    }
-                });
+                        break;
+                    default:
+                        alert('uh oh');
+                }
+            });
 
-                if (!enabled) {
+            if (!enabled) {
 
-                    if (!settings.viewRestricted) {
-                        $item.find('> .content').text('Restricted');
-                        $item.css('visibility', 'hidden').css('display', 'none');
-                    } else {
-
-                        $item.removeClass('tv-unchecked tv-mixed tv-checked').addClass('tv-disabled');
-                    }
-
+                if (!settings.viewRestricted) {
+                    $item.find('> .content').text('Restricted');
+                    $item.css('visibility', 'hidden').css('display', 'none');
                 } else {
 
+                    $item.removeClass('tv-unchecked tv-mixed tv-checked').addClass('tv-disabled');
+                }
+
+            } else {
+                     
+                $item.on('click', '>.content, >.icon_tv_check', function () {
+                    var $node = $(this).parent();
+                    var currentStatus = $node.data('status');
+                    if (!currentStatus) { currentStatus = 'unchecked'; }
 
 
-                    $item.on('click', '>.content, >.icon_tv_check', function () {
-                        var $node = $(this).parent();
-                        var currentStatus = $node.data('status');
-                        if (!currentStatus) { currentStatus = 'unchecked'; }
+                    switch (currentStatus) {
+                        case 'unchecked':
+                            /*
+                                -select + all descendents
+                                -eval ancestors
+                                - if singleSelect, unselect the siblings and the parents siblings if any
+                            */
+                            if (settings.singleSelect) {
+                                //In parents exit, uncheck it and it's siblings.
+                                if ($node.parents('ul > li').length > 0) {
+                                    $node.parents('ul > li:last').each(function () {
+                                          _selectNode($(this), 'unchecked', 0);
+                                         $(this).siblings().each(function () {
+                                             _selectNode($(this), 'unchecked', 0);
+                                         });
+                                    });
+                                    } else {//uncheck it all siblings
+                                        _selectNode($node, 'unchecked', 0);
+                                    $node.siblings().each(function () {
+                                        _selectNode($(this), 'unchecked', 0);
+                                    });
+                                }
+                            }
+
+                            _selectNode($node, 'checked', 0, false);//select node
 
 
-                        switch (currentStatus) {
-                            case 'unchecked':
-                                /*
-                                    -select + all descendents
-                                    -eval ancestors
-                                */
-                                _selectNode($node, 'checked', 0);
-                                break;
-                            case 'checked':
-                                /*  -unselect + all descendents
-                                    -eval ancestors
-                                */
-                                _selectNode($node, 'unchecked', 0);
-                                break;
-                            case 'mixed':
-                                /*
-                                    -same as 1
-                                */
+                            break;
+                        case 'checked':
+                            /*  -unselect + all descendents
+                                -eval ancestors
+                            */
+                           
+                               // just uncheck the single node
+                               _selectNode($node, 'unchecked', 0);
+                          
+                            break;
+                        case 'mixed':
+                            /*
+                                -same as 1
+                            */
 
-                                _selectNode($node, 'unchecked', 0);
-                                break;
+                            _selectNode($node, 'unchecked', 0);
+                            break;
 
-                            default: alert('uh oh');
-                        }
+                        default: alert('uh oh');
+                    }
 
                         
 
-                    });
-                }
+                });
             }
+        }
 
 
 
 
 
 
-        };
+    };
 
-        function _goGetMoreNodes($node, parent) {
+    function _goGetMoreNodes($node, parent) {
             var $ul;
             var $tmp = $('<li class="temp-node">' + settings.waitText + '</li>');
 
@@ -309,8 +343,8 @@
                 _init($ul, (parent != null));
 
     
-                //if parent's selection has changed prior to expansion, than we need to update th children
-                if (($node.data('status') == 'checked') || ($node.data('status') == 'unchecked')) {
+                //if parent's selection has changed prior to expansion, than we need to update th children, unless we are in sigleselect mode
+                if ((($node.data('status') == 'checked') || ($node.data('status') == 'unchecked')) && !settings.singleSelect) {
                     var newState = $node.data('status');
                     $ul.find('>li').each(function () {
                         if ($(this).data('enabled')) {
@@ -352,7 +386,6 @@
 
 
         }
-
 
     function _selectNode(node, status, direction, deep) {
 
@@ -442,7 +475,6 @@
 
         }
 
-
     function _exportNode($node) {
         return {
             id: $node.data('id')
@@ -452,10 +484,8 @@
         
     }
 
-
-    function _exportData($node, deep) {
-
-
+    function _exportData($node, deep, onlyChecked) {
+        /// recursive function to return all nodes, if onlyChecked is specified get only that status
 
         var nodes = new Array();
         var $this = $(this);
@@ -463,25 +493,42 @@
             $this = $node;
         }
 
+            onlyChecked = (onlyChecked === undefined) ? false : onlyChecked;
 
         if ($this[0].tagName.toLowerCase() == 'li') {
 
              
             deep = (($this.data('status') == 'mixed'));
-               
+            var hasStatus = ($this.data('status') == 'checked') ? 1 : ($this.data('status') == 'unchecked') ? 0 : -1;
+            //if we need to return only checked and this node is checked then return it, otherwise go deeper
+            if (onlyChecked) {
+                return hasStatus == 1 ? {
+                    id: $this.data('id')
+                     , s: hasStatus
+                     , x: $this.data('ext')
+                     , c: $this.data('status') == 'mixed'
+                     , ch: null
+                } : (deep && ($this.find('> ul').length > 0)) ? _exportData($this.find('> ul'), deep, onlyChecked) : null
+            } else {
+                //return the node as is and go deeper to get more nodes
                 return {
                     id: $this.data('id')
-                        , s: ($this.data('status') == 'checked') ? 1 : ($this.data('status') == 'unchecked') ? 0 : -1
+                    , s: hasStatus
                     , x: $this.data('ext')
-                        , c: $this.data('status') == 'mixed'
-                        , ch: (deep && ($this.find('> ul').length > 0)) ? _exportData($this.find('> ul'), deep) : null
+                    , c: $this.data('status') == 'mixed'
+                        , ch: (deep && ($this.find('> ul').length > 0)) ? _exportData($this.find('> ul'), deep,onlyChecked) : null
                 };
-      
+            }
         } else {
 
             //no need to traverse unchecked items.
             $this.find('> li').each(function () {
-                nodes.push(_exportData($(this), deep));
+                    var node = _exportData($(this), deep, onlyChecked);
+                    if (node != null)
+                        if (onlyChecked)
+                            nodes = node;
+                        else
+                        nodes.push(node);
             });
         }
 
@@ -540,8 +587,6 @@
             }
         });
     }
-
-
 
     function _isExpanded(id, ext) {
         if (!$listview) { $listview = $(this); }
@@ -607,9 +652,7 @@
             }
    
     }
-
-
-
+        
     function _setStatus(id, ext, status)
     {
 
